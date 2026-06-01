@@ -124,21 +124,6 @@ function renderFloorPlan() {
 
     container.appendChild(roomsDiv);
 }
- Object.keys(floors).sort((a,b)=>a-b).forEach(f=>{
-   const div=document.createElement("div");
-   div.className="floor";
-   div.innerHTML=``;
-   const roomBox=div.querySelector(".rooms");
-
-   floors[f].forEach(room=>{
-      const d=document.createElement("div");
-      d.className=`room ${room.status}`;
-      d.innerHTML=`<div class="room-number">${room.number}</div>
-      <div>${room.type}</div>
-      <div>${room.guests>0?room.guests+" khách":"Trống"}</div>`;
-      d.onclick=()=>showRoomModal(room);
-      roomBox.appendChild(d);
-   });
 
    container.appendChild(div);
  });
