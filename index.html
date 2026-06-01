@@ -2,233 +2,204 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Quản Lý Khách Sạn</title>
 <style>
-body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f4f4}
-.container{max-width:1200px;margin:auto}
+    button.selected{
+    box-shadow:0 0 0 4px #000 inset;
+    transform:scale(1.05);
+}
+    .status-btn{
+    opacity:0.7;
+    transition:0.2s;
+}
+
+.status-btn.active{
+    outline:4px solid #000;
+    opacity:1;
+    transform:scale(1.05);
+}
+    button{
+    padding:10px 15px;
+    margin:5px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    color:white;
+    font-weight:bold;
+}
+
+.btn-checkin{
+    background:#0d6efd; /* Xanh dương */
+}
+
+.btn-checkout{
+    background:#dc3545; /* Đỏ */
+}
+
+.btn-cleaning{
+    background:#ffc107; /* Vàng */
+    color:black;
+}
+
+.btn-clean{
+    background:#28a745; /* Xanh lá */
+}
+
+.btn-save{
+    background:#198754;
+}
+
+.btn-close{
+    background:#6c757d;
+}
+.btn-reset{
+    background:#343a40;
+}
+body{font-family:Arial;margin:0;padding:20px;background:#f4f4f4}
 h1{text-align:center}
-.controls{text-align:center;margin-bottom:20px}
-button{padding:10px 15px;margin:5px;border:none;border-radius:5px;cursor:pointer}
-.btn-primary{background:#007bff;color:#fff}
-.btn-success{background:#28a745;color:#fff}
-.btn-warning{background:#ffc107}
-.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
-.room{padding:12px;border-radius:10px;text-align:center;cursor:pointer;border:3px solid #666;background:#fff}
+.controls{text-align:center;margin:20px 0}
+button{padding:10px 15px;margin:5px;border:none;border-radius:6px;cursor:pointer}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px}
+.room{padding:15px;border-radius:12px;text-align:center;border:4px solid}
 .clean{background:#d4edda;border-color:#28a745}
+.occupied{background:#cfe2ff;border-color:#0d6efd}
+.cleaning{background:#fff3cd;border-color:#ffc107}
 .dirty{background:#f8d7da;border-color:#dc3545}
 .room-number{font-size:22px;font-weight:bold}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);overflow-y:auto}
-.modal-content{background:#fff;margin:20px auto;padding:20px;width:90%;max-width:700px;border-radius:12px;max-height:85vh;overflow-y:auto}
-input{width:100%;padding:8px;margin:6px 0;box-sizing:border-box}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6)}
+.modal-content{background:#fff;max-width:500px;margin:5% auto;padding:20px;border-radius:10px}
+input{width:100%;padding:8px;margin:5px 0;box-sizing:border-box}
 </style>
 </head>
 <body>
-
-<div class="container">
 <h1>📊 Quản Lý Khách Sạn</h1>
 
 <div class="controls">
-<button class="btn-primary" onclick="showManageModal()">Quản Lý Phòng</button>
-<button class="btn-success" onclick="exportData()">Xuất CSV</button>
-<button class="btn-warning" onclick="clearData()">Xóa Dữ Liệu</button>
+<button class="btn-reset" onclick="resetData()">🗑 Reset</button>
 </div>
 
-<div id="floorPlan" class="rooms"></div>
-</div>
+<div id="rooms" class="rooms"></div>
 
-<div id="roomModal" class="modal">
+<div id="modal" class="modal">
 <div class="modal-content">
-<h2 id="modalTitle"></h2>
-<p>Số phòng: <span id="roomNum"></span></p>
-<p>Loại phòng: <span id="roomType"></span></p>
-
-<label>Số khách</label>
-<input type="number" id="guestCount">
-
+<h2 id="title"></h2>
 <label>Tên khách</label>
-<input type="text" id="guestName">
+<input id="guestName">
+<label>Số khách</label>
+<input id="guestCount" type="number">
 
-<button onclick="setStatus('clean')">Sạch</button>
-<button onclick="setStatus('dirty')">Bẩn</button>
+<div>
+<button class="btn-checkin status-action"
+onclick="selectButton(this);checkIn();">
+🔵 Check-in
+</button>
 
-<hr>
+<button class="btn-checkout status-action"
+onclick="selectButton(this);checkOut();">
+🔴 Check-out
+</button>
 
-<button class="btn-primary" onclick="saveRoomData()">Lưu</button>
-<button onclick="closeModal()">Đóng</button>
-</div>
-</div>
+<button class="btn-cleaning status-action"
+onclick="selectButton(this);setStatus('cleaning');">
+🟡 Đang dọn
+</button>
 
-<div id="manageModal" class="modal">
-<div class="modal-content">
-<h2>Danh sách phòng</h2>
-<div id="roomList"></div>
-<button class="btn-primary" onclick="addNewRoom()">+ Thêm phòng</button>
-<button onclick="closeManageModal()">Đóng</button>
-</div>
+<button class="btn-clean status-action"
+onclick="selectButton(this);setStatus('clean');">
+🟢 Đã sạch
+</button>
+
+<br><br>
+
+<button class="btn-save" onclick="saveRoom()">💾 Lưu</button>
+<button class="btn-close" onclick="closeModal()">✖ Đóng</button>
 </div>
 
 <script>
-let rooms=[];
+const defaultRooms=[{number:302,type:"Đơn",status:"clean",guests:0,guestName:""},{number:403,type:"Đơn",status:"clean",guests:0,guestName:""},{number:404,type:"Đơn",status:"clean",guests:0,guestName:""},{number:405,type:"Đơn",status:"clean",guests:0,guestName:""},{number:406,type:"Đơn",status:"clean",guests:0,guestName:""},{number:507,type:"Đơn",status:"clean",guests:0,guestName:""},{number:508,type:"Đơn",status:"clean",guests:0,guestName:""},{number:509,type:"Đơn",status:"clean",guests:0,guestName:""},{number:510,type:"Đơn",status:"clean",guests:0,guestName:""},{number:611,type:"Đơn",status:"clean",guests:0,guestName:""},{number:612,type:"Đơn",status:"clean",guests:0,guestName:""},{number:613,type:"Đơn",status:"clean",guests:0,guestName:""},{number:715,type:"Đơn",status:"clean",guests:0,guestName:""},{number:716,type:"Đơn",status:"clean",guests:0,guestName:""},{number:717,type:"Đơn",status:"clean",guests:0,guestName:""},{number:718,type:"Đơn",status:"clean",guests:0,guestName:""}];
+let rooms=JSON.parse(localStorage.getItem('hotelRooms')||'null')||defaultRooms;
 
-try{
- const saved=localStorage.getItem("hotelRooms");
- rooms=saved?JSON.parse(saved):[
-  {id:101,number:101,type:"Standard",status:"clean",guests:0,guestName:""},
-  {id:102,number:102,type:"Deluxe",status:"clean",guests:0,guestName:""},
-  {id:201,number:201,type:"VIP",status:"clean",guests:0,guestName:""}
- ];
-}catch(e){
- rooms=[];
-}
-
-function saveData(){
- localStorage.setItem("hotelRooms",JSON.stringify(rooms));
-}
-
-function renderFloorPlan(){
- const container=document.getElementById("floorPlan");
- container.innerHTML="";
-
- rooms.sort((a,b)=>a.number-b.number);
-
- rooms.forEach(room=>{
-   const div=document.createElement("div");
-   div.className="room "+room.status;
-
-   div.innerHTML=`
-   <div class="room-number">${room.number}</div>
-   <div>${room.type}</div>
-   <div>${room.guests>0 ? room.guests+" khách" : "Trống"}</div>
-   `;
-
-   div.onclick=()=>showRoomModal(room);
-
-   container.appendChild(div);
- });
-}
-
-let currentRoom=null;
-
-function showRoomModal(room){
- currentRoom=room;
- document.getElementById("modalTitle").textContent="Phòng "+room.number;
- document.getElementById("roomNum").textContent=room.number;
- document.getElementById("roomType").textContent=room.type;
- document.getElementById("guestCount").value=room.guests;
- document.getElementById("guestName").value=room.guestName||"";
- document.getElementById("roomModal").style.display="block";
-}
-
-function closeModal(){
- document.getElementById("roomModal").style.display="none";
-}
-
+function save(){localStorage.setItem('hotelRooms',JSON.stringify(rooms));}
 function setStatus(status){
- if(currentRoom) currentRoom.status=status;
+
+    if(!current) return;
+
+    current.status = status;
+
+    document.querySelectorAll('.status-btn')
+        .forEach(btn => btn.classList.remove('active'));
+
+    event.target.classList.add('active');
+}
+function render(){
+const el=document.getElementById('rooms');
+el.innerHTML='';
+rooms.forEach(r=>{
+const d=document.createElement('div');
+d.className='room '+r.status;
+d.innerHTML=`<div class="room-number">${r.number}</div>
+<div>${r.type}</div>
+<div>${r.guestName||'Trống'}</div>
+<div>${r.guests? r.guests+' khách':''}</div>`;
+d.onclick=()=>openRoom(r);
+el.appendChild(d);
+});
 }
 
-function saveRoomData(){
- if(!currentRoom) return;
- currentRoom.guests=parseInt(document.getElementById("guestCount").value)||0;
- currentRoom.guestName=document.getElementById("guestName").value;
- saveData();
- renderFloorPlan();
- closeModal();
+let current=null;
+function selectButton(btn){
+
+    document.querySelectorAll('.status-action')
+        .forEach(b=>b.classList.remove('selected'));
+
+    btn.classList.add('selected');
 }
 
-function showManageModal(){
- renderRoomList();
- document.getElementById("manageModal").style.display="block";
+function openRoom(r){
+current=r;
+title.textContent='Phòng '+r.number;
+guestName.value=r.guestName||'';
+guestCount.value=r.guests||0;
+modal.style.display='block';
+document.querySelectorAll('.status-action')
+.forEach(b=>b.classList.remove('selected'));
+
+if(room.status==='occupied')
+ document.querySelector('.btn-checkin').classList.add('selected');
+
+if(room.status==='dirty')
+ document.querySelector('.btn-checkout').classList.add('selected');
+
+if(room.status==='cleaning')
+ document.querySelector('.btn-cleaning').classList.add('selected');
+
+if(room.status==='clean')
+ document.querySelector('.btn-clean').classList.add('selected');
 }
 
-function closeManageModal(){
- document.getElementById("manageModal").style.display="none";
+function closeModal(){modal.style.display='none';}
+
+function checkIn(){if(current) current.status='occupied';}
+function checkOut(){if(current){current.guestName='';current.guests=0;current.status='dirty';guestName.value='';guestCount.value=0;}}
+function setStatus(s){if(current) current.status=s;}
+
+function saveRoom(){
+current.guestName=guestName.value.trim();
+current.guests=parseInt(guestCount.value)||0;
+save();
+render();
+closeModal();
 }
 
-function renderRoomList(){
- const list=document.getElementById("roomList");
-
- list.innerHTML=rooms.map((r,i)=>`
- <div style="padding:10px;border:1px solid #ddd;margin:5px 0">
- <b>${r.number}</b> - ${r.type}
- <button onclick="editRoom(${i})">Sửa</button>
- <button onclick="deleteRoom(${i})">Xóa</button>
- </div>
- `).join("");
+function resetData(){
+if(confirm('Xóa dữ liệu?')){
+localStorage.removeItem('hotelRooms');
+location.reload();
+}
 }
 
-function addNewRoom(){
- const num=prompt("Nhập số phòng");
- if(!num) return;
-
- if(rooms.some(r=>r.number===parseInt(num))){
-   alert("Phòng đã tồn tại!");
-   return;
- }
-
- const type=prompt("Loại phòng","Standard") || "Standard";
-
- rooms.push({
-   id:Date.now(),
-   number:parseInt(num),
-   type:type,
-   status:"clean",
-   guests:0,
-   guestName:""
- });
-
- saveData();
- renderRoomList();
- renderFloorPlan();
-}
-
-function editRoom(i){
- const room=rooms[i];
-
- const num=prompt("Số phòng",room.number);
- const type=prompt("Loại phòng",room.type);
-
- if(num) room.number=parseInt(num);
- if(type) room.type=type;
-
- saveData();
- renderRoomList();
- renderFloorPlan();
-}
-
-function deleteRoom(i){
- if(confirm("Xóa phòng này?")){
-   rooms.splice(i,1);
-   saveData();
-   renderRoomList();
-   renderFloorPlan();
- }
-}
-
-function exportData(){
- let csv="SoPhong,LoaiPhong,SoKhach,TenKhach,TrangThai\n";
-
- rooms.forEach(r=>{
-  csv+=`${r.number},${r.type},${r.guests},"${r.guestName}",${r.status}\n`;
- });
-
- const blob=new Blob([csv],{type:"text/csv"});
- const a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="khachsan.csv";
- a.click();
-}
-
-function clearData(){
- if(confirm("Xóa toàn bộ dữ liệu?")){
-  localStorage.removeItem("hotelRooms");
-  location.reload();
- }
-}
-
-renderFloorPlan();
+render();
 </script>
-
 </body>
 </html>
