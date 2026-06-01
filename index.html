@@ -1,244 +1,222 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Khách Sạn - Sơ Đồ Phòng</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
-        h1 { text-align: center; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .controls { margin: 15px 0; text-align: center; }
-        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
-        .btn-primary { background: #007bff; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-warning { background: #ffc107; color: black; }
-
-        .floor-plan { display: grid; gap: 15px; margin-top: 20px; }
-        .floor { border: 2px solid #333; padding: 15px; background: white; border-radius: 10px; }
-        .floor-title { font-weight: bold; font-size: 18px; margin-bottom: 12px; text-align: center; }
-        .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-        
-        .room { 
-            border: 3px solid #666; padding: 12px; border-radius: 10px; 
-            text-align: center; cursor: pointer; min-height: 110px;
-            position: relative;
-        }
-        .room.clean { background: #d4edda; border-color: #28a745; }
-        .room.dirty { background: #f8d7da; border-color: #dc3545; }
-        .room.empty { background: #e2e3e5; border-color: #6c757d; }
-
-        .room-number { font-weight: bold; font-size: 20px; }
-        .room-type { font-size: 13px; color: #555; margin: 5px 0; }
-        .room-guest { font-size: 14px; font-weight: bold; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
-        .modal-content { background: white; margin: 5% auto; padding: 25px; width: 90%; max-width: 500px; border-radius: 12px; }
-        
-        input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản Lý Khách Sạn</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f4f4}
+h1{text-align:center}
+.container{max-width:1200px;margin:auto}
+.controls{text-align:center;margin:15px 0}
+button{padding:10px 15px;margin:5px;border:none;border-radius:5px;cursor:pointer}
+.btn-primary{background:#007bff;color:#fff}
+.btn-success{background:#28a745;color:#fff}
+.btn-warning{background:#ffc107}
+.floor{background:#fff;border:2px solid #333;border-radius:10px;padding:15px;margin-bottom:15px}
+.floor-title{text-align:center;font-weight:bold;font-size:18px}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:10px}
+.room{padding:12px;border-radius:10px;text-align:center;cursor:pointer;border:3px solid #666}
+.clean{background:#d4edda;border-color:#28a745}
+.dirty{background:#f8d7da;border-color:#dc3545}
+.room-number{font-size:20px;font-weight:bold}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7)}
+.modal-content{background:#fff;max-width:500px;margin:5% auto;padding:20px;border-radius:10px}
+input{width:100%;padding:8px;margin:5px 0}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>📊 Quản Lý Khách Sạn - Sơ Đồ Phòng</h1>
-        
-        <div class="controls">
-            <button class="btn-primary" onclick="showManageModal()">Quản Lý Phòng</button>
-            <button class="btn-success" onclick="exportData()">Xuất CSV</button>
-            <button class="btn-warning" onclick="clearData()">Xóa Tất Cả Dữ Liệu</button>
-        </div>
+<div class="container">
+<h1>📊 Quản Lý Khách Sạn</h1>
+<div class="controls">
+<button class="btn-primary" onclick="showManageModal()">Quản Lý Phòng</button>
+<button class="btn-success" onclick="exportData()">Xuất CSV</button>
+<button class="btn-warning" onclick="clearData()">Xóa Dữ Liệu</button>
+</div>
+<div id="floorPlan"></div>
+</div>
 
-        <div id="floorPlan" class="floor-plan"></div>
-    </div>
+<div id="roomModal" class="modal">
+<div class="modal-content">
+<h2 id="modalTitle"></h2>
+<p>Số phòng: <span id="roomNum"></span></p>
+<p>Loại phòng: <span id="roomType"></span></p>
+<input type="number" id="guestCount" placeholder="Số khách">
+<input type="text" id="guestName" placeholder="Tên khách">
+<p>
+<button onclick="setStatus('clean')">Sạch</button>
+<button onclick="setStatus('dirty')">Bẩn</button>
+</p>
+<button onclick="saveRoomData()">Lưu</button>
+<button onclick="closeModal()">Đóng</button>
+</div>
+</div>
 
-    <!-- Modal Chi Tiết Phòng -->
-    <div id="roomModal" class="modal">
-        <div class="modal-content">
-            <h2 id="modalTitle">Chi Tiết Phòng</h2>
-            <p><strong>Số phòng:</strong> <span id="roomNum"></span></p>
-            <p><strong>Loại phòng:</strong> <span id="roomType"></span></p>
-            
-            <label>Số lượng khách:</label>
-            <input type="number" id="guestCount" min="0" value="0">
-            
-            <label>Tên khách chính:</label>
-            <input type="text" id="guestName" placeholder="Nhập tên khách">
-            
-            <label>Trạng thái phòng:</label><br>
-            <button onclick="setStatus('clean')" style="background:#28a745;color:white;padding:8px 16px;">Sạch</button>
-            <button onclick="setStatus('dirty')" style="background:#dc3545;color:white;padding:8px 16px;">Bẩn</button>
-            
-            <div style="margin-top:20px;">
-                <button class="btn-primary" onclick="saveRoomData()">💾 Lưu</button>
-                <button onclick="closeModal()" style="background:#6c757d;color:white;">Đóng</button>
-            </div>
-        </div>
-    </div>
+<div id="manageModal" class="modal">
+<div class="modal-content">
+<h2>Danh sách phòng</h2>
+<div id="roomList"></div>
+<button onclick="addNewRoom()">+ Thêm phòng</button>
+<button onclick="closeManageModal()">Đóng</button>
+</div>
+</div>
 
-    <!-- Modal Quản Lý Phòng -->
-    <div id="manageModal" class="modal">
-        <div class="modal-content">
-            <h2>Quản Lý Danh Sách Phòng</h2>
-            <div id="roomList"></div>
-            <br>
-            <button class="btn-primary" onclick="addNewRoom()">+ Thêm Phòng Mới</button>
-            <button onclick="closeManageModal()" style="background:#6c757d;color:white;">Đóng</button>
-        </div>
-    </div>
+<script>
+let rooms=[];
 
-    <script>
-        let rooms = JSON.parse(localStorage.getItem('hotelRooms')) || [
-            {id:101, number:101, type:"Standard", floor:1, status:"clean", guests:0, guestName:""},
-            {id:102, number:102, type:"Deluxe", floor:1, status:"clean", guests:0, guestName:""},
-            {id:201, number:201, type:"VIP", floor:2, status:"clean", guests:0, guestName:""},
-        ];
+try{
+ const saved=localStorage.getItem("hotelRooms");
+ rooms=saved?JSON.parse(saved):[
+  {id:101,number:101,type:"Standard",floor:1,status:"clean",guests:0,guestName:""},
+  {id:102,number:102,type:"Deluxe",floor:1,status:"clean",guests:0,guestName:""},
+  {id:201,number:201,type:"VIP",floor:2,status:"clean",guests:0,guestName:""}
+ ];
+}catch(e){
+ rooms=[];
+}
 
-        function renderFloorPlan() {
-            const container = document.getElementById('floorPlan');
-            container.innerHTML = '';
-            
-            const floors = {};
-            rooms.forEach(room => {
-                if (!floors[room.floor]) floors[room.floor] = [];
-                floors[room.floor].push(room);
-            });
+function saveData(){
+ localStorage.setItem("hotelRooms",JSON.stringify(rooms));
+}
 
-            Object.keys(floors).sort((a,b) => a-b).forEach(floor => {
-                const floorDiv = document.createElement('div');
-                floorDiv.className = 'floor';
-                floorDiv.innerHTML = `<div class="floor-title">TẦNG ${floor}</div>`;
-                
-                const roomsDiv = document.createElement('div');
-                roomsDiv.className = 'rooms';
-                
-                floors[floor].sort((a,b) => a.number - b.number).forEach(room => {
-                    const roomDiv = document.createElement('div');
-                    roomDiv.className = `room ${room.status}`;
-                    roomDiv.innerHTML = `
-                        <div class="room-number">${room.number}</div>
-                        <div class="room-type">${room.type}</div>
-                        <div class="room-guest">${room.guests > 0 ? room.guests + ' khách' : 'Trống'}</div>
-                    `;
-                    roomDiv.onclick = () => showRoomModal(room);
-                    roomsDiv.appendChild(roomDiv);
-                });
-                floorDiv.appendChild(roomsDiv);
-                container.appendChild(floorDiv);
-            });
-        }
+function renderFloorPlan(){
+ const container=document.getElementById("floorPlan");
+ container.innerHTML="";
+ const floors={};
+ rooms.forEach(r=>{
+   if(!floors[r.floor]) floors[r.floor]=[];
+   floors[r.floor].push(r);
+ });
 
-        let currentRoom = null;
-        function showRoomModal(room) {
-            currentRoom = room;
-            document.getElementById('modalTitle').textContent = `Phòng ${room.number}`;
-            document.getElementById('roomNum').textContent = room.number;
-            document.getElementById('roomType').textContent = room.type;
-            document.getElementById('guestCount').value = room.guests;
-            document.getElementById('guestName').value = room.guestName || '';
-            document.getElementById('roomModal').style.display = 'block';
-        }
+ Object.keys(floors).sort((a,b)=>a-b).forEach(f=>{
+   const div=document.createElement("div");
+   div.className="floor";
+   div.innerHTML=`<div class="floor-title">TẦNG ${f}</div><div class="rooms"></div>`;
+   const roomBox=div.querySelector(".rooms");
 
-        function setStatus(status) {
-            if (currentRoom) currentRoom.status = status;
-        }
+   floors[f].forEach(room=>{
+      const d=document.createElement("div");
+      d.className=`room ${room.status}`;
+      d.innerHTML=`<div class="room-number">${room.number}</div>
+      <div>${room.type}</div>
+      <div>${room.guests>0?room.guests+" khách":"Trống"}</div>`;
+      d.onclick=()=>showRoomModal(room);
+      roomBox.appendChild(d);
+   });
 
-        function saveRoomData() {
-            if (!currentRoom) return;
-            currentRoom.guests = parseInt(document.getElementById('guestCount').value) || 0;
-            currentRoom.guestName = document.getElementById('guestName').value.trim();
-            localStorage.setItem('hotelRooms', JSON.stringify(rooms));
-            closeModal();
-            renderFloorPlan();
-        }
+   container.appendChild(div);
+ });
+}
 
-        function closeModal() {
-            document.getElementById('roomModal').style.display = 'none';
-        }
+let currentRoom=null;
 
-        // ==================== QUẢN LÝ PHÒNG ====================
-        function showManageModal() {
-            renderRoomList();
-            document.getElementById('manageModal').style.display = 'block';
-        }
+function showRoomModal(room){
+ currentRoom=room;
+ roomNum.textContent=room.number;
+ roomType.textContent=room.type;
+ modalTitle.textContent="Phòng "+room.number;
+ guestCount.value=room.guests;
+ guestName.value=room.guestName||"";
+ roomModal.style.display="block";
+}
 
-        function closeManageModal() {
-            document.getElementById('manageModal').style.display = 'none';
-            renderFloorPlan();
-        }
+function setStatus(status){
+ if(currentRoom) currentRoom.status=status;
+}
 
-        function renderRoomList() {
-            const list = document.getElementById('roomList');
-            let html = '';
-            rooms.forEach((room, index) => {
-                html += `
-                    <div style="padding:12px; margin:8px 0; background:#f8f9fa; border-radius:8px; border:1px solid #ddd;">
-                        <b>${room.number}</b> - ${room.type} 
-                        <button onclick="editRoom(${index})" style="margin-left:10px;">Sửa</button>
-                        <button onclick="deleteRoom(${index})" style="color:red;">Xóa</button>
-                    </div>`;
-            });
-            list.innerHTML = html;
-        }
+function saveRoomData(){
+ if(!currentRoom) return;
+ currentRoom.guests=parseInt(guestCount.value)||0;
+ currentRoom.guestName=guestName.value.trim();
+ saveData();
+ renderFloorPlan();
+ closeModal();
+}
 
-        function editRoom(index) {
-            const room = rooms[index];
-            const newNum = prompt("Nhập số phòng mới:", room.number);
-            const newType = prompt("Nhập loại phòng:", room.type);
-            if (newNum) room.number = parseInt(newNum);
-            if (newType) room.type = newType;
-            renderRoomList();
-            localStorage.setItem('hotelRooms', JSON.stringify(rooms));
-        }
+function closeModal(){ roomModal.style.display="none"; }
 
-        function deleteRoom(index) {
-            if (confirm("Bạn có chắc muốn xóa phòng này?")) {
-                rooms.splice(index, 1);
-                renderRoomList();
-                localStorage.setItem('hotelRooms', JSON.stringify(rooms));
-            }
-        }
+function showManageModal(){
+ renderRoomList();
+ manageModal.style.display="block";
+}
 
-        function addNewRoom() {
-            const num = prompt("Nhập số phòng mới (ví dụ: 103):");
-            if (!num) return;
-            const type = prompt("Nhập loại phòng:", "Standard");
-            const floor = Math.floor(parseInt(num) / 100);
-            
-            rooms.push({
-                id: Date.now(),
-                number: parseInt(num),
-                type: type || "Standard",
-                floor: floor,
-                status: "clean",
-                guests: 0,
-                guestName: ""
-            });
-            renderRoomList();
-            localStorage.setItem('hotelRooms', JSON.stringify(rooms));
-        }
+function closeManageModal(){
+ manageModal.style.display="none";
+ renderFloorPlan();
+}
 
-        function exportData() {
-            let csv = "Số Phòng,Loại Phòng,Số Khách,Tên Khách,Trạng Thái\n";
-            rooms.forEach(r => {
-                csv += `${r.number},${r.type},${r.guests},"${r.guestName || ''}",${r.status}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'khach_san_data.csv';
-            a.click();
-        }
+function renderRoomList(){
+ roomList.innerHTML=rooms.map((r,i)=>`
+ <div style="padding:10px;border:1px solid #ddd;margin:5px 0">
+ <b>${r.number}</b> - ${r.type}
+ <button onclick="editRoom(${i})">Sửa</button>
+ <button onclick="deleteRoom(${i})">Xóa</button>
+ </div>`).join("");
+}
 
-        function clearData() {
-            if (confirm("Xóa toàn bộ dữ liệu phòng?")) {
-                localStorage.removeItem('hotelRooms');
-                location.reload();
-            }
-        }
+function editRoom(i){
+ const r=rooms[i];
+ const num=prompt("Số phòng",r.number);
+ const type=prompt("Loại phòng",r.type);
+ if(num) r.number=parseInt(num);
+ if(type) r.type=type;
+ saveData();
+ renderRoomList();
+}
 
-        // Khởi chạy
-        renderFloorPlan();
-    </script>
+function deleteRoom(i){
+ if(confirm("Xóa phòng?")){
+  rooms.splice(i,1);
+  saveData();
+  renderRoomList();
+ }
+}
+
+function addNewRoom(){
+ const num=prompt("Nhập số phòng");
+ if(!num) return;
+
+ if(rooms.some(r=>r.number===parseInt(num))){
+   alert("Phòng đã tồn tại!");
+   return;
+ }
+
+ const type=prompt("Loại phòng","Standard")||"Standard";
+
+ rooms.push({
+  id:Date.now(),
+  number:parseInt(num),
+  type:type,
+  floor:Math.floor(parseInt(num)/100),
+  status:"clean",
+  guests:0,
+  guestName:""
+ });
+
+ saveData();
+ renderRoomList();
+}
+
+function exportData(){
+ let csv="SoPhong,LoaiPhong,SoKhach,TenKhach,TrangThai\n";
+ rooms.forEach(r=>{
+  csv+=`${r.number},${r.type},${r.guests},"${r.guestName}",${r.status}\n`;
+ });
+ const blob=new Blob([csv],{type:"text/csv"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="khachsan.csv";
+ a.click();
+}
+
+function clearData(){
+ if(confirm("Xóa toàn bộ dữ liệu?")){
+   localStorage.removeItem("hotelRooms");
+   location.reload();
+ }
+}
+
+renderFloorPlan();
+</script>
 </body>
 </html>
