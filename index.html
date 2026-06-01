@@ -14,14 +14,30 @@ button{padding:10px 15px;margin:5px;border:none;border-radius:5px;cursor:pointer
 .btn-success{background:#28a745;color:#fff}
 .btn-warning{background:#ffc107}
 .floor{background:#fff;border:2px solid #333;border-radius:10px;padding:15px;margin-bottom:15px}
-.floor-title{text-align:center;font-weight:bold;font-size:18px}
 .rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:10px}
 .room{padding:12px;border-radius:10px;text-align:center;cursor:pointer;border:3px solid #666}
 .clean{background:#d4edda;border-color:#28a745}
 .dirty{background:#f8d7da;border-color:#dc3545}
 .room-number{font-size:20px;font-weight:bold}
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7)}
-.modal-content{background:#fff;max-width:500px;margin:5% auto;padding:20px;border-radius:10px}
+.modal-content {
+    background: white;
+    margin: 20px auto;
+    padding: 25px;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 12px;
+
+    max-height: 85vh;
+    overflow-y: auto;
+}
+ .modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    overflow-y:auto;
+}
 input{width:100%;padding:8px;margin:5px 0}
 </style>
 </head>
@@ -79,19 +95,39 @@ function saveData(){
  localStorage.setItem("hotelRooms",JSON.stringify(rooms));
 }
 
-function renderFloorPlan(){
- const container=document.getElementById("floorPlan");
- container.innerHTML="";
- const floors={};
- rooms.forEach(r=>{
-   if(!floors[r.floor]) floors[r.floor]=[];
-   floors[r.floor].push(r);
- });
+function renderFloorPlan() {
+    const container = document.getElementById('floorPlan');
+    container.innerHTML = '';
 
+    const roomsDiv = document.createElement('div');
+    roomsDiv.className = 'rooms';
+
+    rooms.sort((a,b)=>a.number-b.number);
+
+    rooms.forEach(room => {
+        const roomDiv = document.createElement('div');
+
+        roomDiv.className = `room ${room.status}`;
+
+        roomDiv.innerHTML = `
+            <div class="room-number">${room.number}</div>
+            <div class="room-type">${room.type}</div>
+            <div class="room-guest">
+                ${room.guests > 0 ? room.guests + ' khách' : 'Trống'}
+            </div>
+        `;
+
+        roomDiv.onclick = () => showRoomModal(room);
+
+        roomsDiv.appendChild(roomDiv);
+    });
+
+    container.appendChild(roomsDiv);
+}
  Object.keys(floors).sort((a,b)=>a-b).forEach(f=>{
    const div=document.createElement("div");
    div.className="floor";
-   div.innerHTML=`<div class="floor-title">TẦNG ${f}</div><div class="rooms"></div>`;
+   div.innerHTML=``;
    const roomBox=div.querySelector(".rooms");
 
    floors[f].forEach(room=>{
