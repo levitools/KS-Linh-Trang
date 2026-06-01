@@ -3,334 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sơ Đồ Khách Sạn - Quản Lý Khách Qua Đêm</title>
+    <title>Quản Lý Khách Sạn - Sơ Đồ Phòng</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        h1 { text-align: center; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .controls { margin: 15px 0; text-align: center; }
+        button { padding: 8px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+
+        .floor-plan { display: grid; gap: 10px; margin-top: 20px; }
+        .floor { border: 2px solid #333; padding: 10px; background: white; border-radius: 8px; }
+        .floor-title { font-weight: bold; margin-bottom: 10px; text-align: center; }
+        .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
         
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f4f6f9;
-            color: #333;
+        .room { 
+            border: 2px solid #666; padding: 10px; border-radius: 8px; 
+            text-align: center; cursor: pointer; min-height: 100px;
+            position: relative;
         }
-        h1 {
-            text-align: center;
-            color: #1e3a8a;
-        }
-        .controls {
-            text-align: center;
-            margin: 20px 0;
-        }
-        button {
-            padding: 10px 16px;
-            margin: 0 8px;
-            background: #1e40af;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        button:hover { background: #1e3a8a; }
+        .room.clean { background: #d4edda; border-color: #28a745; }
+        .room.dirty { background: #f8d7da; border-color: #dc3545; }
+        .room.empty { background: #e2e3e5; border-color: #6c757d; }
+
+        .room-number { font-weight: bold; font-size: 18px; }
+        .room-type { font-size: 12px; color: #555; }
+        .room-guest { font-size: 13px; margin-top: 5px; }
         
-        .floor-plan {
-            display: grid;
-            gap: 15px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        .floor {
-            border: 2px solid #64748b;
-            border-radius: 12px;
-            padding: 15px;
-            background: white;
-        }
-        .floor-label {
-            font-weight: bold;
-            color: #1e40af;
-            margin-bottom: 10px;
-            font-size: 1.1em;
-        }
-        .rooms {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 10px;
-        }
-        .room {
-            border: 2px solid #94a3b8;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #f8fafc;
-        }
-        .room.occupied {
-            border-color: #ef4444;
-            background: #fee2e2;
-        }
-        .room.empty {
-            border-color: #22c55e;
-            background: #f0fdf4;
-        }
-        .room:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .room-number {
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-        .guest-count {
-            font-size: 0.95em;
-            margin: 4px 0;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
+        .modal-content { background: white; margin: 5% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 10px; }
         
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 1000;
-        }
-        .modal-content {
-            background: white;
-            max-width: 420px;
-            margin: 80px auto;
-            padding: 25px;
-            border-radius: 12px;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin: 8px 0;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-        }
-        .summary {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px auto;
-            max-width: 1100px;
-            text-align: center;
-            font-size: 1.1em;
-        }
+        .status { padding: 5px 10px; border-radius: 5px; font-size: 14px; }
     </style>
 </head>
 <body>
-    <h1>🏨 SƠ ĐỒ KHÁCH SẠN</h1>
-    <p style="text-align:center;color:#64748b;">Quản lý khách nghỉ qua đêm</p>
-    
-    <div class="controls">
-        <input type="date" id="currentDate" onchange="loadData()">
-        <button onclick="addNewRoom()">+ Thêm Phòng</button>
-        <button onclick="clearAllData()">Xóa Dữ Liệu</button>
-        <button onclick="exportData()">Xuất Excel</button>
-    </div>
+    <div class="container">
+        <h1>📊 Quản Lý Khách Sạn - Sơ Đồ Phòng</h1>
+        <div class="controls">
+            <button class="btn-primary" onclick="showManageRooms()">Quản Lý Phòng</button>
+            <button class="btn-success" onclick="exportData()">Xuất CSV</button>
+            <button class="btn-warning" onclick="clearData()">Xóa Dữ Liệu</button>
+        </div>
 
-    <div class="summary" id="summary">
-        Tổng khách qua đêm hôm nay: <strong>0</strong> | Phòng đang sử dụng: <strong>0</strong>
+        <div id="floorPlan" class="floor-plan"></div>
     </div>
-
-    <div class="floor-plan" id="floorPlan"></div>
 
     <!-- Modal -->
-    <div class="modal" id="roomModal">
+    <div id="modal" class="modal">
         <div class="modal-content">
-            <h2>Phòng <span id="modalRoom"></span></h2>
+            <h2 id="modalTitle">Chi Tiết Phòng</h2>
+            <p><strong>Phòng:</strong> <span id="roomNum"></span></p>
+            <p><strong>Loại:</strong> <span id="roomType"></span></p>
+            
             <label>Số lượng khách:</label>
-            <input type="number" id="guestCount" value="2" min="1">
+            <input type="number" id="guestCount" value="0" style="width:100%; padding:8px; margin:5px 0;">
             
             <label>Tên khách chính:</label>
-            <input type="text" id="guestName" placeholder="Nguyễn Văn A">
+            <input type="text" id="guestName" placeholder="Tên khách" style="width:100%; padding:8px; margin:5px 0;">
             
-            <label>Check-in:</label>
-            <input type="time" id="checkIn" value="14:00">
-            
-            <label>Check-out:</label>
-            <input type="time" id="checkOut" value="12:00">
-            
-            <label>Ghi chú:</label>
-            <textarea id="note" rows="3" placeholder="VIP, yêu cầu dọn phòng..."></textarea>
+            <label>Trạng thái:</label><br>
+            <button onclick="setStatus('clean')" style="background:#28a745;color:white;">Sạch</button>
+            <button onclick="setStatus('dirty')" style="background:#dc3545;color:white;">Bẩn</button>
             
             <div style="margin-top:15px;">
-                <button onclick="saveRoomData()" style="background:#16a34a;">Lưu Thông Tin</button>
-                <button onclick="markAsEmpty()" style="background:#ef4444;">Trả Phòng (Trống)</button>
-                <button onclick="closeModal()" style="background:#64748b;">Đóng</button>
+                <button class="btn-primary" onclick="saveRoomData()">Lưu</button>
+                <button onclick="closeModal()" style="background:#6c757d;color:white;">Đóng</button>
             </div>
         </div>
     </div>
 
     <script>
-        let rooms = {};
-        let currentDate = new Date().toISOString().split('T')[0];
-        
-        // Khởi tạo một số phòng mẫu (bạn có thể chỉnh)
-        function initDefaultRooms() {
-            const defaultRooms = [
-                "101","102","103","104","105",
-                "201","202","203","204","205",
-                "301","302","303","304","305"
-            ];
-            defaultRooms.forEach(room => {
-                if (!rooms[room]) rooms[room] = { occupied: false, guests: 0, name: "", checkin: "", checkout: "", note: "" };
-            });
-        }
+        let rooms = JSON.parse(localStorage.getItem('hotelRooms')) || [
+            {id:101, number:101, type:"Standard", floor:1, status:"clean", guests:0, guestName:""},
+            {id:102, number:102, type:"Deluxe", floor:1, status:"clean", guests:0, guestName:""},
+            {id:201, number:201, type:"VIP", floor:2, status:"clean", guests:0, guestName:""},
+        ];
 
         function renderFloorPlan() {
             const container = document.getElementById('floorPlan');
             container.innerHTML = '';
             
-            const floors = {1: [], 2: [], 3: []};
-            
-            Object.keys(rooms).forEach(roomNum => {
-                const floor = parseInt(roomNum.substring(0,1));
-                if (floors[floor]) floors[floor].push(roomNum);
+            const floors = {};
+            rooms.forEach(room => {
+                if (!floors[room.floor]) floors[room.floor] = [];
+                floors[room.floor].push(room);
             });
-            
-            Object.keys(floors).forEach(floorNum => {
-                if (floors[floorNum].length === 0) return;
-                
+
+            Object.keys(floors).sort((a,b)=>a-b).forEach(floor => {
                 const floorDiv = document.createElement('div');
                 floorDiv.className = 'floor';
-                floorDiv.innerHTML = `<div class="floor-label">TẦNG ${floorNum}</div>`;
+                floorDiv.innerHTML = `<div class="floor-title">TẦNG ${floor}</div>`;
                 
                 const roomsDiv = document.createElement('div');
                 roomsDiv.className = 'rooms';
                 
-                floors[floorNum].sort().forEach(roomNum => {
-                    const roomData = rooms[roomNum];
+                floors[floor].sort((a,b)=>a.number-b.number).forEach(room => {
                     const roomDiv = document.createElement('div');
-                    roomDiv.className = `room ${roomData.occupied ? 'occupied' : 'empty'}`;
+                    roomDiv.className = `room ${room.status}`;
                     roomDiv.innerHTML = `
-                        <div class="room-number">${roomNum}</div>
-                        <div class="guest-count">${roomData.occupied ? roomData.guests + ' khách' : 'Trống'}</div>
+                        <div class="room-number">${room.number}</div>
+                        <div class="room-type">${room.type}</div>
+                        <div class="room-guest">${room.guests > 0 ? room.guests + ' khách' : 'Trống'}</div>
                     `;
-                    roomDiv.onclick = () => openRoomModal(roomNum);
+                    roomDiv.onclick = () => showRoomModal(room);
                     roomsDiv.appendChild(roomDiv);
                 });
-                
                 floorDiv.appendChild(roomsDiv);
                 container.appendChild(floorDiv);
             });
-            
-            updateSummary();
         }
 
-        function openRoomModal(room) {
-            document.getElementById('modalRoom').textContent = room;
-            const data = rooms[room] || {guests:2, name:'', checkin:'14:00', checkout:'12:00', note:''};
-            
-            document.getElementById('guestCount').value = data.guests || 2;
-            document.getElementById('guestName').value = data.name || '';
-            document.getElementById('checkIn').value = data.checkin || '14:00';
-            document.getElementById('checkOut').value = data.checkout || '12:00';
-            document.getElementById('note').value = data.note || '';
-            
-            window.currentEditingRoom = room;
-            document.getElementById('roomModal').style.display = 'block';
+        let currentRoom = null;
+        function showRoomModal(room) {
+            currentRoom = room;
+            document.getElementById('modalTitle').textContent = `Phòng ${room.number}`;
+            document.getElementById('roomNum').textContent = room.number;
+            document.getElementById('roomType').textContent = room.type;
+            document.getElementById('guestCount').value = room.guests;
+            document.getElementById('guestName').value = room.guestName || '';
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function setStatus(status) {
+            if (currentRoom) currentRoom.status = status;
         }
 
         function saveRoomData() {
-            const room = window.currentEditingRoom;
-            rooms[room] = {
-                occupied: true,
-                guests: parseInt(document.getElementById('guestCount').value) || 1,
-                name: document.getElementById('guestName').value,
-                checkin: document.getElementById('checkIn').value,
-                checkout: document.getElementById('checkOut').value,
-                note: document.getElementById('note').value
-            };
+            if (!currentRoom) return;
+            currentRoom.guests = parseInt(document.getElementById('guestCount').value) || 0;
+            currentRoom.guestName = document.getElementById('guestName').value.trim();
+            localStorage.setItem('hotelRooms', JSON.stringify(rooms));
             closeModal();
-            saveToLocalStorage();
             renderFloorPlan();
-        }
-
-        function markAsEmpty() {
-            if (confirm('Xác nhận trả phòng?')) {
-                const room = window.currentEditingRoom;
-                rooms[room] = { occupied: false, guests: 0, name: "", checkin: "", checkout: "", note: "" };
-                closeModal();
-                saveToLocalStorage();
-                renderFloorPlan();
-            }
         }
 
         function closeModal() {
-            document.getElementById('roomModal').style.display = 'none';
+            document.getElementById('modal').style.display = 'none';
         }
 
-        function updateSummary() {
-            let totalGuests = 0;
-            let occupiedRooms = 0;
-            
-            Object.values(rooms).forEach(r => {
-                if (r.occupied) {
-                    occupiedRooms++;
-                    totalGuests += r.guests || 0;
-                }
+        function showManageRooms() {
+            let html = `<h2>Quản Lý Phòng</h2>`;
+            rooms.forEach((room, index) => {
+                html += `
+                    <div style="margin:10px 0; padding:10px; background:white; border-radius:5px;">
+                        Phòng <b>${room.number}</b> - ${room.type} 
+                        <button onclick="editRoom(${index})">Sửa</button>
+                        <button onclick="deleteRoom(${index})" style="color:red;">Xóa</button>
+                    </div>`;
             });
-            
-            document.getElementById('summary').innerHTML = `
-                Tổng khách qua đêm: <strong>${totalGuests}</strong> | 
-                Phòng đang sử dụng: <strong>${occupiedRooms}</strong>
-            `;
+            html += `<br><button onclick="addNewRoom()">+ Thêm Phòng Mới</button>`;
+            const win = window.open('', '_blank');
+            win.document.body.innerHTML = html;
         }
 
-        function saveToLocalStorage() {
-            localStorage.setItem('hotelRooms_' + currentDate, JSON.stringify(rooms));
-        }
-
-        function loadData() {
-            currentDate = document.getElementById('currentDate').value;
-            const saved = localStorage.getItem('hotelRooms_' + currentDate);
-            rooms = saved ? JSON.parse(saved) : {};
-            initDefaultRooms();
+        function editRoom(index) {
+            const room = rooms[index];
+            const newNumber = prompt("Số phòng mới:", room.number);
+            const newType = prompt("Loại phòng:", room.type);
+            if (newNumber) room.number = parseInt(newNumber);
+            if (newType) room.type = newType;
+            localStorage.setItem('hotelRooms', JSON.stringify(rooms));
             renderFloorPlan();
         }
 
-        function addNewRoom() {
-            const roomNum = prompt("Nhập số phòng mới (ví dụ: 401):");
-            if (roomNum) {
-                rooms[roomNum] = { occupied: false, guests: 0, name: "", checkin: "", checkout: "", note: "" };
-                saveToLocalStorage();
+        function deleteRoom(index) {
+            if (confirm("Xóa phòng này?")) {
+                rooms.splice(index, 1);
+                localStorage.setItem('hotelRooms', JSON.stringify(rooms));
                 renderFloorPlan();
             }
         }
 
-        function clearAllData() {
-            if (confirm('Xóa toàn bộ dữ liệu hôm nay?')) {
-                localStorage.removeItem('hotelRooms_' + currentDate);
-                rooms = {};
-                initDefaultRooms();
+        function addNewRoom() {
+            const num = prompt("Nhập số phòng mới:");
+            const type = prompt("Nhập loại phòng (Standard, Deluxe, VIP...):", "Standard");
+            if (num) {
+                const floor = Math.floor(parseInt(num)/100);
+                rooms.push({
+                    id: parseInt(num),
+                    number: parseInt(num),
+                    type: type,
+                    floor: floor,
+                    status: "clean",
+                    guests: 0,
+                    guestName: ""
+                });
+                localStorage.setItem('hotelRooms', JSON.stringify(rooms));
                 renderFloorPlan();
             }
         }
 
         function exportData() {
-            let csv = "Phòng,Số khách,Tên khách,Check-in,Check-out,Ghi chú\n";
-            Object.keys(rooms).forEach(room => {
-                const d = rooms[room];
-                if (d.occupied) {
-                    csv += `${room},${d.guests},"${d.name}","${d.checkin}","${d.checkout}","${d.note}"\n`;
-                }
+            let csv = "Số Phòng,Loại Phòng,Số Khách,Tên Khách,Trạng Thái\n";
+            rooms.forEach(r => {
+                csv += `${r.number},${r.type},${r.guests},"${r.guestName || ''}",${r.status}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `khach_san_${currentDate}.csv`;
+            a.download = 'khach_san_data.csv';
             a.click();
         }
 
+        function clearData() {
+            if (confirm("Xóa toàn bộ dữ liệu?")) {
+                localStorage.removeItem('hotelRooms');
+                location.reload();
+            }
+        }
+
         // Khởi chạy
-        window.onload = function() {
-            document.getElementById('currentDate').value = currentDate;
-            initDefaultRooms();
-            renderFloorPlan();
-        };
+        renderFloorPlan();
     </script>
 </body>
 </html>
