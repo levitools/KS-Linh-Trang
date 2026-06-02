@@ -1,205 +1,561 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Quản Lý Khách Sạn</title>
-<style>
-    button.selected{
-    box-shadow:0 0 0 4px #000 inset;
-    transform:scale(1.05);
-}
-    .status-btn{
-    opacity:0.7;
-    transition:0.2s;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Quản Lý Khách Sạn Linh Trang</title>
+    <style>
+        :root {
+            --primary-color: #2b6cb0;
+            --success-color: #2f855a;
+            --danger-color: #c53030;
+            --warning-color: #c05621;
+            --bg-color: #f7fafc;
+            --card-clean: #f0fff4;
+            --card-dirty: #fffaf0;
+            --card-occupied: #ebf8ff;
+        }
 
-.status-btn.active{
-    outline:4px solid #000;
-    opacity:1;
-    transform:scale(1.05);
-}
-    button{
-    padding:10px 15px;
-    margin:5px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    color:white;
-    font-weight:bold;
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #2d3748;
+        }
 
-.btn-checkin{
-    background:#0d6efd; /* Xanh dương */
-}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
 
-.btn-checkout{
-    background:#dc3545; /* Đỏ */
-}
+        h1 {
+            text-align: center;
+            color: #1a202c;
+            margin-bottom: 30px;
+        }
 
-.btn-cleaning{
-    background:#ffc107; /* Vàng */
-    color:black;
-}
+        .top-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
 
-.btn-clean{
-    background:#28a745; /* Xanh lá */
-}
+        .btn-top {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            transition: opacity 0.2s;
+        }
 
-.btn-save{
-    background:#198754;
-}
+        .btn-top:hover { opacity: 0.9; }
+        .btn-setup { background-color: var(--primary-color); }
+        .btn-reset { background-color: #718096; }
 
-.btn-close{
-    background:#6c757d;
-}
-.btn-reset{
-    background:#343a40;
-}
-body{font-family:Arial;margin:0;padding:20px;background:#f4f4f4}
-h1{text-align:center}
-.controls{text-align:center;margin:20px 0}
-button{padding:10px 15px;margin:5px;border:none;border-radius:6px;cursor:pointer}
-.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px}
-.room{padding:15px;border-radius:12px;text-align:center;border:4px solid}
-.clean{background:#d4edda;border-color:#28a745}
-.occupied{background:#cfe2ff;border-color:#0d6efd}
-.cleaning{background:#fff3cd;border-color:#ffc107}
-.dirty{background:#f8d7da;border-color:#dc3545}
-.room-number{font-size:22px;font-weight:bold}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6)}
-.modal-content{background:#fff;max-width:500px;margin:5% auto;padding:20px;border-radius:10px}
-input{width:100%;padding:8px;margin:5px 0;box-sizing:border-box}
-</style>
+        /* Stats Dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .stat-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .stat-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .stat-box p {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a202c;
+        }
+
+        .stat-revenue p { color: var(--success-color); }
+
+        /* Rooms Grid */
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .room-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .room-number {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .room-status {
+            font-size: 13px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .room-desc {
+            font-size: 13px;
+            color: #4a5568;
+            margin: 0 0 15px 0;
+            min-height: 75px; /* Tăng chiều cao để chứa thêm tên khách */
+            line-height: 1.5;
+        }
+
+        /* Room Status Styles */
+        .room-card.clean { border-color: #48bb78; background-color: var(--card-clean); }
+        .room-card.clean .room-status { background-color: #c6f6d5; color: #22543d; }
+
+        .room-card.occupied { border-color: #4299e1; background-color: var(--card-occupied); }
+        .room-card.occupied .room-status { background-color: #ebf8ff; color: #2b6cb0; }
+
+        .room-card.dirty { border-color: #ed8936; background-color: var(--card-dirty); }
+        .room-card.dirty .room-status { background-color: #feebc8; color: #744210; }
+
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-clean { background-color: #48bb78; }
+        .btn-clean:hover { background-color: #38a169; }
+
+        .btn-occupied { background-color: #e53e3e; }
+        .btn-occupied:hover { background-color: #c53030; }
+
+        .btn-dirty { background-color: #ed8936; }
+        .btn-dirty:hover { background-color: #dd6b20; }
+
+        /* Badge Trạng thái Thanh toán trên ô phòng */
+        .pay-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        .pay-paid { background-color: #c6f6d5; color: #22543d; }
+        .pay-unpaid { background-color: #fed7d7; color: #9b2c2c; }
+
+        /* Hộp thoại lựa chọn hình thức (Modal) */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-box {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            text-align: left;
+        }
+        .modal-box h2 { margin-top: 0; color: #1a202c; font-size: 20px; text-align: center;}
+        
+        /* Cấu trúc Form điền thông tin */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .form-group-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .form-group-checkbox input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .modal-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0 10px 0;
+        }
+        .btn-opt {
+            padding: 12px 5px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #f7fafc;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .btn-opt:hover {
+            border-color: var(--primary-color);
+            background: #ebf8ff;
+        }
+        .modal-footer {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .btn-cancel {
+            background: none;
+            border: none;
+            color: #718096;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-<h1>📊 Quản Lý Khách Sạn</h1>
 
-<div class="controls">
-<button class="btn-reset" onclick="resetData()">🗑 Reset</button>
+<div class="container">
+    <h1>🏨 Quản Lý Khách Sạn Linh Trang</h1>
+
+    <div class="top-actions">
+        <button class="btn-top btn-setup" onclick="setupRooms()">⚙️ Thiết lập số phòng</button>
+        <button class="btn-top btn-reset" onclick="resetData()">🗑 Reset dữ liệu</button>
+    </div>
+
+    <div class="dashboard">
+        <div class="stat-box">
+            <h3>Tổng số phòng</h3>
+            <p id="total-rooms">16</p>
+        </div>
+        <div class="stat-box">
+            <h3>Phòng Sạch</h3>
+            <p id="clean-rooms">14</p>
+        </div>
+        <div class="stat-box">
+            <h3>Có Khách</h3>
+            <p id="occupied-rooms">0</p>
+        </div>
+        <div class="stat-box">
+            <h3>Đang dọn / Bẩn</h3>
+            <p id="dirty-rooms">2</p>
+        </div>
+        <div class="stat-box stat-revenue">
+            <h3>Doanh thu hôm nay</h3>
+            <p id="revenue">0đ</p>
+        </div>
+    </div>
+
+    <div class="rooms-grid" id="rooms-container"></div>
 </div>
 
-<div id="rooms" class="rooms"></div>
+<div class="modal-overlay" id="checkin-modal">
+    <div class="modal-box">
+        <h2 id="modal-title">Check-in phòng</h2>
+        
+        <div class="form-group">
+            <label for="guest-name">👤 Tên khách hàng:</label>
+            <input type="text" id="guest-name" placeholder="Nhập tên khách thuê..." autocomplete="off">
+        </div>
 
-<div id="modal" class="modal">
-<div class="modal-content">
-<h2 id="title"></h2>
-<label>Tên khách</label>
-<input id="guestName">
-<label>Số khách</label>
-<input id="guestCount" type="number">
+        <div class="form-group">
+            <label class="form-group-checkbox">
+                <input type="checkbox" id="is-paid">
+                💰 Khách đã thanh toán trước tiền phòng
+            </label>
+        </div>
 
-<div>
-<button class="btn-checkin status-action"
-onclick="selectButton(this);checkIn();">
-🔵 Check-in
-</button>
-
-<button class="btn-checkout status-action"
-onclick="selectButton(this);checkOut();">
-🔴 Check-out
-</button>
-
-<button class="btn-cleaning status-action"
-onclick="selectButton(this);setStatus('cleaning');">
-🟡 Đang dọn
-</button>
-
-<button class="btn-clean status-action"
-onclick="selectButton(this);setStatus('clean');">
-🟢 Đã sạch
-</button>
-
-<br><br>
-
-<button class="btn-save" onclick="saveRoom()">💾 Lưu</button>
-<button class="btn-close" onclick="closeModal()">✖ Đóng</button>
+        <label style="font-weight: bold; font-size: 14px;">⚡ Chọn hình thức thuê để xác nhận:</label>
+        <div class="modal-options">
+            <button class="btn-opt" onclick="selectCheckInType('hourly')">⏱️ Theo Giờ<br><small>(100k/2h đầu)</small></button>
+            <button class="btn-opt" onclick="selectCheckInType('overnight')">🌙 Qua Đêm<br><small>(200k đến 12h trưa)</small></button>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal()">Hủy bỏ</button>
+        </div>
+    </div>
 </div>
 
 <script>
-const defaultRooms=[{number:302,type:"Đơn",status:"clean",guests:0,guestName:""},{number:403,type:"Đơn",status:"clean",guests:0,guestName:""},{number:404,type:"Đơn",status:"clean",guests:0,guestName:""},{number:405,type:"Đơn",status:"clean",guests:0,guestName:""},{number:406,type:"Đơn",status:"clean",guests:0,guestName:""},{number:507,type:"Đơn",status:"clean",guests:0,guestName:""},{number:508,type:"Đơn",status:"clean",guests:0,guestName:""},{number:509,type:"Đơn",status:"clean",guests:0,guestName:""},{number:510,type:"Đơn",status:"clean",guests:0,guestName:""},{number:611,type:"Đơn",status:"clean",guests:0,guestName:""},{number:612,type:"Đơn",status:"clean",guests:0,guestName:""},{number:613,type:"Đơn",status:"clean",guests:0,guestName:""},{number:715,type:"Đơn",status:"clean",guests:0,guestName:""},{number:716,type:"Đơn",status:"clean",guests:0,guestName:""},{number:717,type:"Đơn",status:"clean",guests:0,guestName:""},{number:718,type:"Đơn",status:"clean",guests:0,guestName:""}];
-let rooms=JSON.parse(localStorage.getItem('hotelRooms')||'null')||defaultRooms;
+    let roomsData = [
+        { id: "302", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "403", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "404", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "405", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "406", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "507", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "508", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "509", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "510", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "611", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "612", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "613", status: "dirty", desc: "Cần xử lý trước khi đón khách", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "715", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "716", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "717", status: "dirty", desc: "Cần xử lý trước khi đón khách", type: "", checkInTime: "", guestName: "", isPaid: false },
+        { id: "718", status: "clean", desc: "Phòng trống sẵn sàng", type: "", checkInTime: "", guestName: "", isPaid: false }
+    ];
 
-function save(){localStorage.setItem('hotelRooms',JSON.stringify(rooms));}
-function setStatus(status){
+    let currentSelectingRoomId = null;
 
-    if(!current) return;
+    if (localStorage.getItem('hotel_rooms')) {
+        roomsData = JSON.parse(localStorage.getItem('hotel_rooms'));
+    }
 
-    current.status = status;
+    function formatDateTime(isoString) {
+        if (!isoString) return '';
+        const d = new Date(isoString);
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} - ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
 
-    document.querySelectorAll('.status-btn')
-        .forEach(btn => btn.classList.remove('active'));
+    function renderRooms() {
+        const container = document.getElementById('rooms-container');
+        container.innerHTML = '';
 
-    event.target.classList.add('active');
-}
-function render(){
-const el=document.getElementById('rooms');
-el.innerHTML='';
-rooms.forEach(r=>{
-const d=document.createElement('div');
-d.className='room '+r.status;
-d.innerHTML=`<div class="room-number">${r.number}</div>
-<div>${r.type}</div>
-<div>${r.guestName||'Trống'}</div>
-<div>${r.guests? r.guests+' khách':''}</div>`;
-d.onclick=()=>openRoom(r);
-el.appendChild(d);
-});
-}
+        roomsData.forEach(room => {
+            const card = document.createElement('div');
+            card.className = `room-card ${room.status}`;
 
-let current=null;
-function selectButton(btn){
+            let statusLabel = '';
+            let buttonText = '';
+            let buttonClass = '';
+            let displayDesc = room.desc;
 
-    document.querySelectorAll('.status-action')
-        .forEach(b=>b.classList.remove('selected'));
+            if (room.status === 'clean') {
+                statusLabel = 'Sạch';
+                buttonText = 'Cập nhật / Check-in';
+                buttonClass = 'btn-clean';
+            } else if (room.status === 'occupied') {
+                statusLabel = 'Có Khách';
+                buttonText = 'Check-out';
+                buttonClass = 'btn-occupied';
+                
+                const typeText = room.type === 'hourly' ? 'Nghỉ theo giờ' : 'Qua đêm';
+                const nameText = room.guestName ? room.guestName : 'Khách vãng lai';
+                const paymentBadge = room.isPaid ? '<span class="pay-badge pay-paid">✔ Đã thanh toán</span>' : '<span class="pay-badge pay-unpaid">⚠ Chưa thanh toán</span>';
+                
+                displayDesc = `👤 <b>${nameText}</b> (${typeText})<br>🕒 Vào: ${formatDateTime(room.checkInTime)}<br>${paymentBadge}`;
+            } else if (room.status === 'dirty') {
+                statusLabel = '🧹 Bẩn/Hư';
+                buttonText = 'Xác nhận đã dọn';
+                buttonClass = 'btn-dirty';
+            }
 
-    btn.classList.add('selected');
-}
+            card.innerHTML = `
+                <div class="room-header">
+                    <span class="room-number">${room.id}</span>
+                    <span class="room-status">${statusLabel}</span>
+                </div>
+                <p class="room-desc">${displayDesc}</p>
+                <button class="btn-action ${buttonClass}" onclick="handleRoomAction('${room.id}')">${buttonText}</button>
+            `;
+            container.appendChild(card);
+        });
 
-function openRoom(r){
-current=r;
-title.textContent='Phòng '+r.number;
-guestName.value=r.guestName||'';
-guestCount.value=r.guests||0;
-modal.style.display='block';
-document.querySelectorAll('.status-action')
-.forEach(b=>b.classList.remove('selected'));
+        updateDashboardCounters();
+        saveToLocalStorage();
+    }
 
-if(room.status==='occupied')
- document.querySelector('.btn-checkin').classList.add('selected');
+    function handleRoomAction(roomId) {
+        const room = roomsData.find(r => r.id === roomId);
+        if (!room) return;
 
-if(room.status==='dirty')
- document.querySelector('.btn-checkout').classList.add('selected');
+        if (room.status === 'clean') {
+            currentSelectingRoomId = roomId;
+            document.getElementById('modal-title').textContent = `Check-in phòng ${roomId}`;
+            // Reset form cũ
+            document.getElementById('guest-name').value = '';
+            document.getElementById('is-paid').checked = false;
+            
+            document.getElementById('checkin-modal').classList.add('active');
+        } else if (room.status === 'occupied') {
+            const checkOutTime = new Date();
+            const checkInTime = new Date(room.checkInTime);
+            
+            let amount = calculatePrice(room.type, checkInTime, checkOutTime);
+            const nameText = room.guestName ? room.guestName : 'Khách vãng lai';
+            const paymentStatusText = room.isPaid ? 'ĐÃ THANH TOÁN TRƯỚC' : 'CHƯA THANH TOÁN';
+            
+            alert(`[HÓA ĐƠN PHÒNG ${room.id}]\n-------------------------------\n- Khách hàng: ${nameText}\n- Hình thức: ${room.type === 'hourly' ? 'Nghỉ giờ' : 'Qua đêm'}\n- Giờ vào: ${formatDateTime(room.checkInTime)}\n- Giờ ra: ${formatDateTime(checkOutTime.toISOString())}\n- Trạng thái ban đầu: ${paymentStatusText}\n\n👉 TỔNG TIỀN PHÒNG: ${amount.toLocaleString('vi-VN')} đ`);
+            
+            room.status = 'dirty';
+            room.desc = 'Cần xử lý trước khi đón khách';
+            room.type = '';
+            room.checkInTime = '';
+            room.guestName = '';
+            room.isPaid = false;
+            
+            incrementRevenue(amount);
+            renderRooms();
+        } else if (room.status === 'dirty') {
+            room.status = 'clean';
+            room.desc = 'Phòng trống sẵn sàng';
+            renderRooms();
+        }
+    }
 
-if(room.status==='cleaning')
- document.querySelector('.btn-cleaning').classList.add('selected');
+    function calculatePrice(type, checkIn, checkOut) {
+        const diffMs = checkOut - checkIn;
+        const diffHours = diffMs / (1000 * 60 * 60);
 
-if(room.status==='clean')
- document.querySelector('.btn-clean').classList.add('selected');
-}
+        if (type === 'hourly') {
+            if (diffHours <= 2) {
+                return 100000;
+            } else {
+                let extraHours = Math.ceil(diffHours - 2);
+                return 100000 + (extraHours * 20000);
+            }
+        } else if (type === 'overnight') {
+            let basePrice = 200000;
+            let deadline = new Date(checkIn);
+            if (checkIn.getHours() >= 12) {
+                deadline.setDate(deadline.getDate() + 1);
+            }
+            deadline.setHours(12, 0, 0, 0);
 
-function closeModal(){modal.style.display='none';}
+            if (checkOut <= deadline) {
+                return basePrice;
+            } else {
+                const overMs = checkOut - deadline;
+                const overHours = Math.ceil(overMs / (1000 * 60 * 60));
+                return basePrice + (overHours * 20000);
+            }
+        }
+        return 0;
+    }
 
-function checkIn(){if(current) current.status='occupied';}
-function checkOut(){if(current){current.guestName='';current.guests=0;current.status='dirty';guestName.value='';guestCount.value=0;}}
-function setStatus(s){if(current) current.status=s;}
+    function selectCheckInType(type) {
+        if (!currentSelectingRoomId) return;
+        const room = roomsData.find(r => r.id === currentSelectingRoomId);
+        if (room) {
+            const nameInput = document.getElementById('guest-name').value.trim();
+            const paidInput = document.getElementById('is-paid').checked;
 
-function saveRoom(){
-current.guestName=guestName.value.trim();
-current.guests=parseInt(guestCount.value)||0;
-save();
-render();
-closeModal();
-}
+            room.status = 'occupied';
+            room.type = type;
+            room.checkInTime = new Date().toISOString();
+            room.guestName = nameInput ? nameInput : "Khách vãng lai"; // Nếu không điền tên sẽ mặc định là khách vãng lai
+            room.isPaid = paidInput;
 
-function resetData(){
-if(confirm('Xóa dữ liệu?')){
-localStorage.removeItem('hotelRooms');
-location.reload();
-}
-}
+            closeModal();
+            renderRooms();
+        }
+    }
 
-render();
+    function closeModal() {
+        document.getElementById('checkin-modal').classList.remove('active');
+        currentSelectingRoomId = null;
+    }
+
+    function updateDashboardCounters() {
+        const total = roomsData.length;
+        const clean = roomsData.filter(r => r.status === 'clean').length;
+        const occupied = roomsData.filter(r => r.status === 'occupied').length;
+        const dirty = roomsData.filter(r => r.status === 'dirty').length;
+
+        document.getElementById('total-rooms').textContent = total;
+        document.getElementById('clean-rooms').textContent = clean;
+        document.getElementById('occupied-rooms').textContent = occupied;
+        document.getElementById('dirty-rooms').textContent = dirty;
+    }
+
+    function saveToLocalStorage() {
+        localStorage.setItem('hotel_rooms', JSON.stringify(roomsData));
+    }
+
+    function incrementRevenue(amount) {
+        let currentRev = parseInt(localStorage.getItem('hotel_revenue')) || 0;
+        currentRev += amount;
+        localStorage.setItem('hotel_revenue', currentRev);
+        document.getElementById('revenue').textContent = currentRev.toLocaleString('vi-VN') + 'đ';
+    }
+
+    function setupRooms() {
+        const input = prompt("Nhập số các phòng, cách nhau bằng dấu phẩy (Ví dụ: 302,403,404):");
+        if (input) {
+            const arr = input.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            if (arr.length > 0) {
+                roomsData = arr.map(id => ({ id: id, status: 'clean', desc: 'Phòng trống sẵn sàng', type: '', checkInTime: '', guestName: '', isPaid: false }));
+                renderRooms();
+            }
+        }
+    }
+
+    function resetData() {
+        if(confirm("Bạn có chắc chắn muốn reset lại toàn bộ dữ liệu phòng và doanh thu về mặc định không?")) {
+            localStorage.removeItem('hotel_rooms');
+            localStorage.removeItem('hotel_revenue');
+            location.reload();
+        }
+    }
+
+    window.onload = function() {
+        let currentRev = parseInt(localStorage.getItem('hotel_revenue')) || 0;
+        document.getElementById('revenue').textContent = currentRev.toLocaleString('vi-VN') + 'đ';
+        renderRooms();
+    }
 </script>
+
 </body>
 </html>
