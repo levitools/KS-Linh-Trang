@@ -128,9 +128,10 @@
         
         .water-badge { background: rgba(59, 130, 246, 0.06); color: #1d4ed8; padding: 4px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; width: fit-content; }
         
+        /* Chỉnh màu chữ trạng thái thu tiền rực rỡ và dày chữ hơn */
         .pay-badge { font-weight: 700; font-size: 11px; display: flex; align-items: center; gap: 4px; margin: 2px 0; }
-        .pay-prepaid { color: #059669; }
-        .pay-unpaid { color: var(--danger-color); }
+        .pay-prepaid { color: #16a34a; } /* Màu xanh lá tươi */
+        .pay-unpaid { color: #dc2626; } /* Màu đỏ rực */
 
         /* Tối ưu nút bấm trong ô vuông */
         .room-card button { padding: 5px 8px; font-size: 11px; border-radius: 5px; font-weight: 600; }
@@ -319,13 +320,15 @@ function render() {
             statusClass = 'status-occupied';
 
             let isPaidPre = room.prePaid && room.prePaid.includes('Có');
+            /* ĐÃ CẬP NHẬT: Thêm icon biểu tượng và phân tách rõ màu đỏ cho Chưa thu / xanh cho Đã trả trước */
             let payBadgeHTML = isPaidPre 
                 ? `<p class="pay-badge pay-prepaid"><i class="fa-solid fa-circle-check"></i> Đã trả trước</p>` 
                 : `<p class="pay-badge pay-unpaid"><i class="fa-solid fa-circle-exclamation"></i> Chưa thu tiền</p>`;
 
+            /* ĐÃ CẬP NHẬT: Định dạng màu cho Tên khách (Xanh dương) và Giờ vào (Cam) */
             bodyContent = `
-                <p><i class="fa-solid fa-user"></i> <b>${room.guest}</b></p>
-                <p><i class="fa-solid fa-business-time"></i> ${room.rentType} | ${room.checkIn.split(' - ')[0]}</p>
+                <p style="color: #1e3a8a; font-weight: bold;"><i class="fa-solid fa-user" style="color: #3b82f6;"></i> <span>${room.guest}</span></p>
+                <p style="color: #d97706; font-weight: 600;"><i class="fa-solid fa-business-time" style="color: #f59e0b;"></i> ${room.rentType} | ${room.checkIn.split(' - ')[0]}</p>
                 ${payBadgeHTML}
                 <div class="water-badge"><i class="fa-solid fa-glass-water"></i> Nước: ${formatMoney(room.water)}</div>
             `;
@@ -353,6 +356,9 @@ function render() {
     const tbody = document.getElementById('invoiceTableBody');
     tbody.innerHTML = '';
     invoices.forEach(inv => {
+        /* ĐÃ CẬP NHẬT: Định màu chữ cho cột "Thanh toán trước" ở bảng hóa đơn dựa trên trạng thái Có/Không */
+        let invoicePayColor = inv.prePaid.includes('Có') ? '#16a34a' : '#dc2626';
+        
         tbody.innerHTML += `
             <tr>
                 <td><b>${inv.id}</b></td>
@@ -364,7 +370,7 @@ function render() {
                 <td>${formatMoney(inv.roomPrice)}</td>
                 <td style="color:var(--primary-color); font-weight:bold;">${formatMoney(inv.waterPrice)}</td>
                 <td style="color:#047857; font-weight:bold;">${formatMoney(inv.roomPrice + inv.waterPrice)}</td>
-                <td><span style="color:${inv.prePaid.includes('Có')?'#047857':'var(--text-main)'}; font-weight:500;">${inv.prePaid}</span></td>
+                <td><span style="color:${invoicePayColor}; font-weight:700;">${inv.prePaid}</span></td>
             </tr>
         `;
     });
